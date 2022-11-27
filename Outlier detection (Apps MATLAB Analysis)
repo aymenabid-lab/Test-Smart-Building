@@ -1,0 +1,70 @@
+% Read lumonisity data from a ThingSpeak channel and remove outliers, if 
+% present. Write the cleaned data to another channel for storage. 
+   
+% Channel Smart home simulation (ID 1643575) contains data from real sensor station, located 
+% in Sfax, Tunisia. The data is collected once every 1/2 minute. Field 
+% 4 fields contains 2 metrics data (analog and val for each). 
+   
+% Channel ID to read data from 
+readChannelID = 1643575; 
+% Luminosity Field ID (row) 
+lumFieldID = 2; 
+%Number of recods to read (lines)
+points= 100;
+   
+% Channel Read API Key   
+% If your channel is private, then enter the read API Key between the '' below: 
+readAPIKey = ''; 
+
+% Read the last data from the smart home simulation
+% station channel. Learn more about the thingSpeakRead function by going to 
+% the Documentation tab on the right side pane of this page. 
+   
+[lumVal,timeStamp] = thingSpeakRead(readChannelID,'fields',lumFieldID, ...
+                                                     'NumPoints',points,  ...
+                                                     'ReadKey',readAPIKey);
+   
+% We will use the isoutlier function. With the default settings, this   
+% calculates whether a value is more than three scaled median absolute 
+% deviations away from the median. (See MATLAB documentation for the   
+% isoutlier function for more details: 
+% https://fr.mathworks.com/help/matlab/ref/isoutlier.html) 
+% If any such points are found, we   
+% will delete the point and the corresponding timestamp. 
+
+% Check for outliers 
+% Find the indices of elements which are outliers 
+outlierDataIndex = isoutlier(lumVal); 
+
+% Find the indices of elements which are not outliers 
+cleanDataIndex = ~outlierDataIndex;
+
+% Select elements that are outliers 
+outlierData = lumVal(outlierDataIndex); 
+
+% Select elements that are not outliers 
+cleanData = lumVal(cleanDataIndex); 
+   
+
+% Select timestamps corresponding to outlier data 
+outlierTimeStamps = timeStamp(outlierDataIndex); 
+
+% Select timestamps corresponding to clean data 
+cleanTimeStamps = timeStamp(cleanDataIndex); 
+
+% Create a table with outlier data and their respective timestamps 
+outlierDataTable = timetable(outlierTimeStamps,outlierData); 
+
+% Create a table with clean data and their respective timestamps 
+cleanDataTable = timetable(cleanTimeStamps,cleanData); 
+
+display(outlierDataTable,'Outlier data'); 
+ 
+% If you need 
+% Replace the [] with channel ID to write data to: 
+writeChannelID = []; 
+
+% Enter the Write API Key between the '' below: 
+writeAPIKey = ''; 
+% Use the folwing code to write (deleta '%'):
+%thingSpeakWrite(writeChannelID,cleanData,'timestamp',cleanTimeStamps,'Writekey',writeAPIKey); 
